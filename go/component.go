@@ -53,6 +53,6 @@ func AddSocket(name string, component *Component, socketType string, transportTy
 	return s, nil
 }
 
-func Run(component *Component) error {
+func RunComponent(component *Component) error {
 
 }

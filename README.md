@@ -50,6 +50,20 @@ CodeDepot.tech ~ component package
       - head        *Component
       - tail        *Component
 
+# Component Repository
+
+  - it is important that the author information of the orignal code be maintained
+  - the repository item will contain:
+
+  - The following tools are required
+    - github client
+    - language parser
+    - database of (url, funcname)
+      - url to the file that contains the function definition
+      - the exact name of the function
+    - component executable generator
+    - repo/artifact for code/exe storage
+
 
 # User Space
 

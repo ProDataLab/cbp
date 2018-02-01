@@ -11,7 +11,8 @@ type Connection struct {
 	downstreamComponent *Component 
 }
 
-func newConnection(name string, upstreamComponent *Component, downstreamComponent *Component) (*Connection, error) {
+// NewConnection returns a new Connection object
+func NewConnection(name string, upstreamComponent *Component, downstreamComponent *Component) (*Connection, error) {
 	// todo: type check component
 	c := new(Connection)
 	c.id.name = name 

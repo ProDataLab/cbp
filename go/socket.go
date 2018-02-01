@@ -52,8 +52,8 @@ var (
 	}
 )
 
-// AddSocket creates a new component socket and returns it.
-func newSocket(name string, socket string, transport string, url string) (*Socket, error) {
+// NewSocket creates a new component socket and returns it.
+func NewSocket(name string, socket string, transport string, url string) (*Socket, error) {
 	if !isSocketType(socket) {
 		return nil, ErrWrongSocketType
 	}
@@ -103,14 +103,14 @@ func newSocket(name string, socket string, transport string, url string) (*Socke
 }
 
 // SetSubscriptionFilters is used to set topic filters in a pub/sub protocol
-func setSubscriptionFilters(socket mangos.Socket, topics []byte) error {
+func SetSubscriptionFilters(socket mangos.Socket, topics []byte) error {
 	if socket.GetProtocol().Name() != "sub" {
 		return ErrWrongSocketType
 	}
 	return sock.SetOption(mangos.OptionSubscribe, topics)
 }
 
-func Run(sockets []Socket) error {
+func RunSocket(sockets []Socket) error {
 	for socket := range sockets {
 		var err error 
 		switch socket.socketType {
