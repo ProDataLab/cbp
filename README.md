@@ -23,29 +23,45 @@ CodeDepot.tech ~ component package
     * marshals the output to a msgpack msg 
     * sends it to the next component via out-socket
 
-- Id Type Contains:
-  - name    string
-  - number  int64
+# Types
 
-- cbp package:
+  - Id Type Contains:
+    - name    string
+    - number  int64
 
-  - Component:
-    - id                Id
-    - inSockets         []*Socket
-    - outSockets        []*Socket
-    - configSockets     []*Socket
-    - reportingSockets  []*Socket
+  - cbp package:
 
-  - Connection:
-    - id  Id
-    - upstreamComponent   *Component
-    - downstreamComponent *Component
+    - Component:
+      - id                Id
+      - inSockets         []*Socket
+      - outSockets        []*Socket
+      - configSockets     []*Socket
+      - reportingSockets  []*Socket
 
-  - Composite:
-    - id          Id
-    - components  []*Component
-    - connections []*Connection
-    - head        *Component
-    - tail        *Component
+    - Connection:
+      - id  Id
+      - upstreamComponent   *Component
+      - downstreamComponent *Component
+
+    - Composite:
+      - id          Id
+      - components  []*Component
+      - connections []*Connection
+      - head        *Component
+      - tail        *Component
 
 
+# User Space
+
+## Function Wrapper
+
+  - creates a main
+  - creates a function wrapper for their business logic
+    - gets inChannel outChannel from Component
+    - calls supplied function with args from msg of inChannel
+    - sends output to outChannel
+
+## API
+  - http
+  - web  
+  - cli 
