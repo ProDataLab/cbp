@@ -2,5 +2,5 @@ package cbp
 
 type Id struct {
 	name string
-	number int64
+	uid  string
 }
