@@ -1,5 +1,7 @@
 CodeDepot.tech ~ component package
 
+The following are my notes while the initial code is translated from concept to implementation
+
 **for any particular language**
 1. Create a "component" library|module|package
   * is essentially a nanomsg wrapper
