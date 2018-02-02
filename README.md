@@ -23,70 +23,29 @@ CodeDepot.tech ~ component package
     * marshals the output to a msgpack msg 
     * sends it to the next component via out-socket
 
+- Id Type Contains:
+  - name    string
+  - number  int64
 
-# cbp package:
+- cbp package:
 
-  - Types
-    - Component:
-      - id                Id
-      - inSockets         []*Socket
-      - outSockets        []*Socket
-      - configSockets     []*Socket
-      - reportingSockets  []*Socket
+  - Component:
+    - id                Id
+    - inSockets         []*Socket
+    - outSockets        []*Socket
+    - configSockets     []*Socket
+    - reportingSockets  []*Socket
 
-    - Connection:
-      - id  Id
-      - upstreamComponent   *Component
-      - downstreamComponent *Component
+  - Connection:
+    - id  Id
+    - upstreamComponent   *Component
+    - downstreamComponent *Component
 
-    - Composite:
-      - id          Id
-      - components  []*Component
-      - connections []*Connection
-      - head        *Component
-      - tail        *Component
-
-    - Socket
-      - id            Id
-      - url           string
-      - socketType    string
-      - transportType string
-      - sendChannel   []byte chan
-      - recvChannel   []byte chan
-
-  - Interface 
-    - NewComposite
-      - CreateComponent ~ calls newComponent
-      - CreateConnection ~ calls newConnection
+  - Composite:
+    - id          Id
+    - components  []*Component
+    - connections []*Connection
+    - head        *Component
+    - tail        *Component
 
 
-# Component Repository
-
-  - it is important that the author information of the orignal code be maintained
-  - the repository Component item will contain:
-  - the repository Composite item will contain: 
-
-  - The following tools are required
-    - github client
-    - language parser
-    - database of (url, funcname)
-      - url to the file that contains the function definition
-      - the exact name of the function
-    - component executable generator
-    - repo/artifact for code/exe storage
-
-
-# User Space
-
-## Function Wrapper
-
-  - creates a main
-  - creates a function wrapper for their business logic
-    - gets inChannel outChannel from Component
-    - calls supplied function with args from msg of inChannel
-    - sends output to outChannel
-
-## API
-  - http
-  - web  
-  - cli 
