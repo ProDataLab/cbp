@@ -5,53 +5,53 @@ import (
 )
 
 
-type Composite struct {
+type composite struct {
 	id Id 
-	components []*Component 
+	components []*component 
 	connections []*Connection 
-	head *Component 
-	tail *Component 
+	head *component 
+	tail *component 
 }
 
-// NewComposite retuerns a new, empty Composite object
-func NewComposite(name string) *Composite, error {
-	c := new(Composite)
+// newComposite retuerns a new, empty composite object
+func newComposite(name string) *composite {
+	c := new(composite)
 	c.id.name = name 
 	c.id.uid = xid.New().String()
-	return c, nil 
+	return c
 }
 
-func AddComponent(composite *Composite, component *Component) {
-	composite.components = append(composite.components, component)
+func addComponent(c *composite, comp *component) {
+	c.components = append(c.components, comp)
 }
 
-func AddIntraConnection(composite *Composite, upstreamComponentUid string, downstreamComponentUid string) {
+func addConnection(c *composite, upstreamComponentUid string, downstreamComponentUid string) {
 	var (
-		u *Component
-		d *Component 
+		u *component
+		d *component 
 	)
-	for _, v := range composite.components {
+	for _, v := range c.components {
 		if upstreamComponentUid == v.id.uid {
 			u = v 
 		} else if downstreamComponentUid == v.id.uid {
 			d = v 
 		}
 	}
-	c := NewConnection(u.id.name+"/"+d.id.name, u, d)
-	d.id.uid = xid.New().String()
-	composite.connections = append(composite.connections, c)
+	cn := NewConnection(u.id.name+"/"+d.id.name, u, d)
+	cn.id.uid = xid.New().String()
+	c.connections = append(c.connections, cn)
 }
 
-// AddInterConnection is for connections to outside of this composite
-// ..(composite to component or composite to composite)
+// AddInterConnection is for connections to outside of this c
+// ..(c to component or c to c)
 // func AddInterConnection() {}
 
-func RunComposite(composite *Composite) error {
-	// todo: validate composite
-	composite.head = composite.connections[0]
-	composite.tail = composite.connections[len(composite.connections)-1]
-	for i, c := range composite.connections {
-		RunComponent(c.upstreamComponent)
-		RunComponent(c.downstreamComponent)
+func RunComposite(c *composite) error {
+	// todo: validate c
+	c.head = c.connections[0]
+	c.tail = c.connections[len(c.connections)-1]
+	for i, cn := range c.connections {
+		RunComponent(cn.upstreamComponent)
+		RunComponent(cn.downstreamComponent)
 	}
 }

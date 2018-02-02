@@ -23,16 +23,17 @@ import (
 )
 
 type (
-	Socket struct {
+	socket struct {
 		id            Id
 		url           string
 		socketType    string
 		transportType string
 		mangosSocket  mangos.Socket
-		sendChannel 	[]byte chan 
-		recvChannel 	[]byte chan 
-
+		sendChannel   chan []byte
+		recvChannel   chan []byte
 	}
+	socketType 			string
+	transportType 	string
 )
 
 var (
@@ -52,98 +53,94 @@ var (
 	}
 )
 
-// NewSocket creates a new component socket and returns it.
-func NewSocket(name string, socket string, transport string, url string) (*Socket, error) {
-	if !isSocketType(socket) {
+// newSocket creates a new component socket and returns it.
+func newSocket(name string, st socketType, tt transportType, url string) (*socket, error) {
+	if !isSocketType(st) {
 		return nil, ErrWrongSocketType
 	}
-	if !isSocketType(transport) {
+	if !isTransportType(tt) {
 		return nil, ErrWrongTransportType
 	}
-	sock := new(Socket)
-	sock.id.name = name
-	sock.id.uid = xid.New().String()
-	sock.url = url
-	sock.socketType = socket
-	sock.transportType = transport
+	s := new(socket)
+	s.id.name = name
+	s.id.uid = xid.New().String()
+	s.url = url
+	s.socketType = st
+	s.transportType = tt
 	var (
 		msock mangos.Socket
-		err error
+		err   error
 	)
-	switch socket {
+	switch socketType {
 	case "req":
 		msock, err = req.NewSocket()
-		sock.sendChannel = make([]byte)
-		sock.recvChannel = make([]byte)
+
 	case "rep":
 		msock, err = rep.NewSocket()
-		sock.sendChannel = make([]byte)
-		sock.recvChannel = make([]byte)
+
 	case "pub":
 		msock, err = pub.NewSocket()
-		sock.sendChannel = make([]byte)
+
 	case "sub":
 		msock, err = sub.NewSocket()
-		sock.recvChannel = make([]byte)
 	case "push":
 		msock, err = push.NewSocket()
-		sock.sendChannel = make([]byte)
 	case "pull":
 		msock, err = pull.NewSocket()
-		sock.recvChannel = make([]byte)
 	default:
 		msock, err = nil, ErrNoSocket
 	}
 	if err != nil {
-		return nil, err 
+		return nil, err
 	}
-	sock.mangosSocket = msock 
-	setTransportType(sock, transport)
-	return sock, err
+	s.mangosSocket = msock
+	setTransportType(s, tt)
+	return s, err
 }
 
-// SetSubscriptionFilters is used to set topic filters in a pub/sub protocol
-func SetSubscriptionFilters(socket mangos.Socket, topics []byte) error {
-	if socket.GetProtocol().Name() != "sub" {
+// setSubscriptionFilters is used to set topic filters in a pub/sub protocol
+func setSubscriptionFilters(s socket, topics []byte) error {
+	if s.mangosSocket.GetProtocol().Name() != "sub" {
 		return ErrWrongSocketType
 	}
-	return sock.SetOption(mangos.OptionSubscribe, topics)
+	return s.SetOption(mangos.OptionSubscribe, topics)
 }
 
-func RunSocket(sockets []Socket) error {
-	for socket := range sockets {
-		var err error 
-		switch socket.socketType {
-		case "req":
-			go runReq(socket)
-		case "rep":
-			go runRep(socket)
-		case "pub":
-			go runPub(socket)
-		case "sub":
-			go runSub(socket)
-		case "push":
-			go runPush(socket)
-		case "pull":
-			go runPull(socket)
-		default:
-			msock, err = nil, ErrWrongSocketType
-		}
-		return nil 
+func runSocket(s socket) {
+	switch s.socketType {
+	case "req":
+		s.sendChannel = make(chan []byte)
+		s.recvChannel = make(chan []byte)
+		go runReq(s)
+	case "rep":
+		s.sendChannel = make(chan []byte)
+		s.recvChannel = make(chan []byte)
+		go runRep(s)
+	case "pub":
+		s.sendChannel = make(chan []byte)
+		go runPub(s)
+	case "sub":
+		s.recvChannel = make(chan []byte)
+		go runSub(s)
+	case "push":
+		s.sendChannel = make(chan []byte)
+		go runPush(s)
+	case "pull":
+		s.recvChannel = make(chan []byte)
+		go runPull(s)
 	}
-	return ErrEmptySocketsArray
 }
 
-func setTransportType(sock mangos.Socket, transport string) {
-	switch transport {
+func setTransportType(s socket, tt transportType) {
+	switch tt {
 	case "inproc":
-		sock.AddTransport(inproc.NewTransport())
+		s.mangosSocket.AddTransport(inproc.NewTransport())
 	case "ipc":
-		sock.AddTransport(ipc.NewTransport())
+		s.mangosSocket.AddTransport(ipc.NewTransport())
 	case "tcp":
-		sock.AddTransport(tcp.NewTransport())
+		s.mangosSocket.AddTransport(tcp.NewTransport())
 	case "ws":
-		sock.AddTransport(ws.NewTransport())
+		s.mangosSocket.AddTransport(ws.NewTransport())
 	}
 }
 
@@ -156,134 +153,131 @@ func isSocketType(socketType string) bool {
 	return false
 }
 
-func hasRecvChannel(sock Socket) {
-	types := []string{
-		"req"
+func hasRecvChannel(s socket) {
+	recvTypes := []string{
+		"req",
 		"rep",
 		"sub",
-		"pull"
+		"pull",
 	}
-	for _, v := range types {
-		if v == sock.socketType {
+	for _, v := range recvTypes {
+		if v == s.socketType {
 			return true
 		}
 	}
 	return false
 }
 
-func isTransportType(transportType string) bool {
+func isTransportType(tt transportType) bool {
 	for _, v := range transportTypes {
-		if v == transportType {
+		if v == tt {
 			return true
 		}
 	}
 	return false
 }
 
-func runReq(sock Socket) error {
+func runReq(s socket) error {
 	var (
 		err error
 		msg []byte
 	)
-	if err = socket.mangosSocket.Dial(socket.url); err != nil {
-		return err 
-	}
-	for {
-		msg <-sock.sendChannel
-		if err = sock.mangosSocket.Send(<-sock.sendChannel); err != nil {
-			return err 
-		}
-		if msg, err = sock.mangosSocket.Recv(); err != nil {
-			return err 
-		}
-		sock.recvChannel <-msg 
-	}
-	return nil 
-}
-
-func runRep(socket Socket) error {
-	var (
-		err error
-		msg []byte
-	)
-	if err = socket.mangosSocket.Listen(socket.url); err != nil {
-		return err 
-	}
-	for {
-		if msg, err = socket.mangosSocket.Recv(); err != nil {
-			return err 
-		}
-		socket.recvChannel <- msg 
-
-		if err = socket.mangosSocket.Send(<-socket.sendChannel); err != nil {
-			return err 
-		}
-	}
-	return nil 
-}
-
-func runPub(socket Socket) error {
-	var (
-		err error
-		msg []byte 
-	)
-	if err = socket.mangosSocket.Listen(socket.url); err != nil {
-		return err 
-	}
-	for {
-		if err = socket.mangosSocket.Send(<-socket.sendChannel); err != nil {
-			return err 
-		}
-	}
-	return nil 
-}
-
-func runSub(socket Socket) error {
-	var (
-		err error
-		msg []byte
-	)
-	if err = socket.mangosSocket.Dial(socket.url); err != nil {
+	if err = s.mangosSocket.Dial(s.url); err != nil {
 		return err
 	}
 	for {
-		if msg, err = socket.mangosSocket.Recv(); err != nil {
-			return err 
-		}
-		socket.recvChannel <- msg 
-	}
-	return nil 
-}
-
-func runPush(socket Socket) err {
-	var (
-		err error
-		msg []byte 
-	)
-	if err = socket.mangosSocket.Dial(socket.url); err != nil {
-		return err 
-	}
-	for {
-		if err = socket.mangosSocket.Send(<-socket.sendChannel); err != nil {
-			return err 
-		}
-	}
-	return nil 
-}
-
-func runPull(socket Socket) error {
-	var (
-		err error
-		msg []byte 
-	)
-	if err = socket.mangosSocket.Listen(socket.url); err != nil {
-		return err 
-	}
-	for {
-		if msg, err = socket.mangosSocket.Recv(); err != nil {
+		msg <- s.sendChannel
+		if err = s.mangosSocket.Send(<-s.sendChannel); err != nil {
 			return err
 		}
-		socket.recvChannel <- msg 
+		if msg, err = s.mangosSocket.Recv(); err != nil {
+			return err
+		}
+		s.recvChannel <- msg
 	}
-	return nil 
+}
+
+func runRep(s socket) error {
+	var (
+		err error
+		msg []byte
+	)
+	if err = s.mangosSocket.Listen(s.url); err != nil {
+		return err
+	}
+	for {
+		if msg, err = s.mangosSocket.Recv(); err != nil {
+			return err
+		}
+		s.recvChannel <- msg
+
+		if err = s.mangosSocket.Send(<-s.sendChannel); err != nil {
+			return err
+		}
+	}
+}
+
+func runPub(s socket) error {
+	var (
+		err error
+		msg []byte
+	)
+	if err = s.mangosSocket.Listen(s.url); err != nil {
+		return err
+	}
+	for {
+		if err = s.mangosSocket.Send(<-s.sendChannel); err != nil {
+			return err
+		}
+	}
+}
+
+func runSub(s socket) error {
+	var (
+		err error
+		msg []byte
+	)
+	if err = s.mangosSocket.Dial(s.url); err != nil {
+		return err
+	}
+	for {
+		if msg, err = s.mangosSocket.Recv(); err != nil {
+			return err
+		}
+		s.recvChannel <- msg
+	}
+	return nil
+}
+
+func runPush(s socket) err {
+	var (
+		err error
+		msg []byte
+	)
+	if err = s.mangosSocket.Dial(s.url); err != nil {
+		return err
+	}
+	for {
+		if err = s.mangosSocket.Send(<-s.sendChannel); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func runPull(s socket) error {
+	var (
+		err error
+		msg []byte
+	)
+	if err = s.mangosSocket.Listen(s.url); err != nil {
+		return err
+	}
+	for {
+		if msg, err = s.mangosSocket.Recv(); err != nil {
+			return err
+		}
+		s.recvChannel <- msg
+	}
+	return nil
 }

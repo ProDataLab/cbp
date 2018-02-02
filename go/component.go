@@ -12,30 +12,30 @@ import (
 	"github.com/rs/xid"
 )
 
-type Component struct {
+type component struct {
 	id            Id
-	inSockets     []*Socket
-	outSockets    []*Socket
-	configSockets []*Socket
-	reportSockets []*Socket
-	inChannel 		[]byte chan 
-	outChannel 		[]byte chan 
+	inSockets     []*socket
+	outSockets    []*socket
+	configSockets []*socket
+	reportSockets []*socket
+	inChannel 		chan []byte
+	outChannel 		chan []byte
 }
 
-// NewComonent allocates and returns a new Component to the user.
-func NewComponent(name string) (*Component, error) {
-	c := new(Component)
+// newComonent allocates and returns a new component to the user.
+func newComponent(name string) (*component, error) {
+	c := new(component)
 	c.id.name = name
-	c.id.uid = xid.New().String()S
+	c.id.uid = xid.New().String()
 	return c, nil
 }
 
-func AddSocket(name string, component *Component, socketType string, transportType string, url string) {
+func addSocket(name string, comp *component, socketType string, transportType string, url string) {
 	// TODO: check both socketType and transportType
 	if s, err := socket.newSocket(name, socketType, transportType, url); err != nil {
 		return err
 	}
-	c := component
+	c := comp
 	switch socketType {
 	case "req":
 		c.outSockets = append(c.outSockets, s)
@@ -53,6 +53,6 @@ func AddSocket(name string, component *Component, socketType string, transportTy
 	return s, nil
 }
 
-func RunComponent(component *Component) error {
+func runComponent(comp *component) error {
 
 }

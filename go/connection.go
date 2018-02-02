@@ -5,19 +5,19 @@ import (
 )
 
 
-type Connection struct {
+type connection struct {
 	id Id
-	upstreamComponent *Component 
-	downstreamComponent *Component 
+	upstreamComponent *component 
+	downstreamComponent *component 
 }
 
-// NewConnection returns a new Connection object
-func NewConnection(name string, upstreamComponent *Component, downstreamComponent *Component) (*Connection, error) {
+// newConnection returns a new Connection object
+func newConnection(name string, upstreamComponent *component, downstreamComponent *component) (*connection, error) {
 	// todo: type check component
-	c := new(Connection)
-	c.id.name = name 
-	c.id.uid = xid.New().String()
-	c.upstreamComponent = upstreamComponent
-	c.downstreamComponent = downstreamComponent
-	return c, nil 
+	conn := new(connection)
+	conn.id.name = name 
+	conn.id.uid = xid.New().String()
+	conn.upstreamComponent = upstreamComponent
+	conn.downstreamComponent = downstreamComponent
+	return conn, nil 
 }

@@ -23,14 +23,10 @@ CodeDepot.tech ~ component package
     * marshals the output to a msgpack msg 
     * sends it to the next component via out-socket
 
-# Types
 
-  - Id Type Contains:
-    - name    string
-    - number  int64
+# cbp package:
 
-  - cbp package:
-
+  - Types
     - Component:
       - id                Id
       - inSockets         []*Socket
@@ -50,10 +46,25 @@ CodeDepot.tech ~ component package
       - head        *Component
       - tail        *Component
 
+    - Socket
+      - id            Id
+      - url           string
+      - socketType    string
+      - transportType string
+      - sendChannel   []byte chan
+      - recvChannel   []byte chan
+
+  - Interface 
+    - NewComposite
+      - CreateComponent ~ calls newComponent
+      - CreateConnection ~ calls newConnection
+
+
 # Component Repository
 
   - it is important that the author information of the orignal code be maintained
-  - the repository item will contain:
+  - the repository Component item will contain:
+  - the repository Composite item will contain: 
 
   - The following tools are required
     - github client
