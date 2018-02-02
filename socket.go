@@ -8,6 +8,7 @@ package cbp
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/go-mangos/mangos/protocol/pub"
 	"github.com/go-mangos/mangos/protocol/pull"
@@ -28,14 +29,16 @@ type (
 	socket struct {
 		id           _id
 		url          string
-		sockType     socketType
-		transType    transportType
+		sockType     SocketType
+		transType    TransportType
 		mangosSocket mangos.Socket
 		sendChannel  chan []byte
 		recvChannel  chan []byte
 	}
-	socketType    string
-	transportType string
+	// SocketType blah
+	SocketType string
+	// TransportType blah
+	TransportType string
 )
 
 var (
@@ -62,7 +65,7 @@ var (
 )
 
 // newSocket creates a new component socket and returns it.
-func newSocket(name string, st socketType, tt transportType, url string) (*socket, error) {
+func newSocket(name string, st SocketType, tt TransportType, url string) (*socket, error) {
 	if !isSocketType(st) {
 		return nil, ErrWrongSocketType
 	}
@@ -114,7 +117,8 @@ func (s *socket) setSubscriptionFilters(topics []byte) error {
 	return s.mangosSocket.SetOption(mangos.OptionSubscribe, topics)
 }
 
-func runSocket(s socket) {
+func (s *socket) run() {
+	fmt.Println("in socket.run")
 	switch s.sockType {
 	case "req":
 		s.sendChannel = make(chan []byte)
@@ -139,7 +143,7 @@ func runSocket(s socket) {
 	}
 }
 
-func (s *socket) setTransportType(tt transportType) {
+func (s *socket) setTransportType(tt TransportType) {
 	switch tt {
 	case "inproc":
 		s.mangosSocket.AddTransport(inproc.NewTransport())
@@ -152,7 +156,7 @@ func (s *socket) setTransportType(tt transportType) {
 	}
 }
 
-func isSocketType(st socketType) bool {
+func isSocketType(st SocketType) bool {
 	for _, v := range socketTypes {
 		if v == string(st) {
 			return true
@@ -176,7 +180,7 @@ func (s *socket) hasRecvChannel() bool {
 	return false
 }
 
-func isTransportType(tt transportType) bool {
+func isTransportType(tt TransportType) bool {
 	for _, v := range transportTypes {
 		if v == string(tt) {
 			return true
@@ -260,24 +264,30 @@ func (s *socket) runSub() error {
 }
 
 func (s *socket) runPush() error {
+	fmt.Println("In runPush")
 	var err error
-	defer close(s.sendChannel)
+	// defer close(s.sendChannel)
 	if err = s.mangosSocket.Dial(s.url); err != nil {
+		fmt.Printf("ERROR: %s", err.Error())
 		return err
 	}
+	fmt.Println("here i am")
 	for {
-		if err = s.mangosSocket.Send(<-s.sendChannel); err != nil {
+		tmp := <-s.sendChannel
+		// fmt.Printf("print: %s", string(tmp))
+		if err = s.mangosSocket.Send(tmp); err != nil {
 			return err
 		}
 	}
 }
 
 func (s *socket) runPull() error {
+	fmt.Println("In runPull")
 	var (
 		err error
 		msg []byte
 	)
-	defer close(s.recvChannel)
+	// defer close(s.recvChannel)
 	if err = s.mangosSocket.Listen(s.url); err != nil {
 		return err
 	}
@@ -285,6 +295,7 @@ func (s *socket) runPull() error {
 		if msg, err = s.mangosSocket.Recv(); err != nil {
 			return err
 		}
+		// fmt.Printf("print: %s\n", string(msg))
 		s.recvChannel <- msg
 	}
 }

@@ -9,34 +9,37 @@
 package cbp
 
 import (
+	"fmt"
+
 	"github.com/rs/xid"
 )
 
-type component struct {
+// Component provides the structure of a Component
+type Component struct {
 	id            _id
 	inSockets     []*socket
 	outSockets    []*socket
 	configSockets []*socket
 	reportSockets []*socket
-	inChannel 		chan []byte
-	outChannel 		chan []byte
+	inChannel     chan []byte
+	outChannel    chan []byte
 }
 
-// newComonent allocates and returns a new component to the user.
-func newComponent(name string) (*component, error) {
-	c := new(component)
+// NewComponent allocates and returns a new Component to the user.
+func NewComponent(name string) (*Component, error) {
+	c := new(Component)
 	c.id.name = name
 	c.id.uid = xid.New().String()
 	return c, nil
 }
 
-func addSocket(name string, comp *component, st socketType, tt transportType, url string) error {
-	// TODO: check both socketType and transportType
+// AddSocket adds a socket to the component
+func (c *Component) AddSocket(name string, st SocketType, tt TransportType, url string) error {
+	// TODO: check both SocketType and transportType
 	s, err := newSocket(name, st, tt, url)
 	if err != nil {
 		return err
 	}
-	c := comp
 	switch st {
 	case "req":
 		c.outSockets = append(c.outSockets, s)
@@ -54,6 +57,48 @@ func addSocket(name string, comp *component, st socketType, tt transportType, ur
 	return nil
 }
 
-func runComponent(comp *component) error {
+// RunComponent blah
+func (c *Component) RunComponent() error {
+	var all [][]*socket
+	all = append(all, c.inSockets)
+	all = append(all, c.outSockets)
+	all = append(all, c.configSockets)
+	all = append(all, c.reportSockets)
+	for _, r := range all {
+		for _, s := range r {
+			s.run()
+		}
+	}
+	c.inChannel = make(chan []byte)
+	c.outChannel = make(chan []byte)
+	fanIn := func(ch chan []byte) {
+		for msg := range ch {
+			c.inChannel <- msg
+		}
+	}
+	fanOut := func(sc chan []byte) {
+		for msg := range c.outChannel {
+			fmt.Println(string(msg))
+			sc <- msg
+		}
+	}
+	for _, s := range c.inSockets {
+		fmt.Println(s.id.name)
+		go fanIn(s.recvChannel)
+	}
+	for _, s := range c.outSockets {
+		fmt.Println(s.id.name)
+		go fanOut(s.sendChannel)
+	}
 	return nil
+}
+
+// InChannel blah
+func (c *Component) InChannel() chan []byte {
+	return c.inChannel
+}
+
+// OutChannel blah
+func (c *Component) OutChannel() chan []byte {
+	return c.outChannel
 }

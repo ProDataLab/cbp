@@ -7,13 +7,13 @@ import (
 
 type connection struct {
 	id _id
-	upstreamComponent *component 
-	downstreamComponent *component 
+	upstreamComponent *Component 
+	downstreamComponent *Component 
 }
 
 // newConnection returns a new Connection object
-func newConnection(name string, upstreamComponent *component, downstreamComponent *component) (*connection, error) {
-	// todo: type check component
+func newConnection(name string, upstreamComponent *Component, downstreamComponent *Component) (*connection, error) {
+	// todo: type check Component
 	conn := new(connection)
 	conn.id.name = name 
 	conn.id.uid = xid.New().String()

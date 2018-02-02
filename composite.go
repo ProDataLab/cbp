@@ -4,31 +4,33 @@ import (
 	"github.com/rs/xid"
 )
 
-
-type composite struct {
+// Composite blah
+type Composite struct {
 	id _id 
-	components []*component 
+	components []*Component 
 	connections []*connection 
-	head *component 
-	tail *component 
+	head *Component 
+	tail *Component 
 }
 
-// newComposite retuerns a new, empty composite object
-func newComposite(name string) *composite {
-	c := new(composite)
+// NewComposite retuerns a new, empty Composite object
+func NewComposite(name string) *Composite {
+	c := new(Composite)
 	c.id.name = name 
 	c.id.uid = xid.New().String()
 	return c
 }
 
-func addComponent(c *composite, comp *component) {
+// AddComponent blah
+func (c *Composite) AddComponent(comp *Component) {
 	c.components = append(c.components, comp)
 }
 
-func addConnection(c *composite, upstreamComponentUID string, downstreamComponentUID string) error {
+// AddConnection blah
+func (c *Composite) AddConnection(upstreamComponentUID string, downstreamComponentUID string) error {
 	var (
-		u *component
-		d *component 
+		u *Component
+		d *Component 
 	)
 	for _, v := range c.components {
 		if upstreamComponentUID == v.id.uid {
@@ -47,16 +49,16 @@ func addConnection(c *composite, upstreamComponentUID string, downstreamComponen
 }
 
 // AddInterConnection is for connections to outside of this c
-// ..(c to component or c to c)
+// ..(c to Component or c to c)
 // func AddInterConnection() {}
 
 // RunComposite blah
-func RunComposite(c *composite) {
+func RunComposite(c *Composite) {
 	// todo: validate c
 	c.head = c.connections[0].upstreamComponent
 	c.tail = c.connections[len(c.connections)-1].downstreamComponent
 	for _, cn := range c.connections {
-		runComponent(cn.upstreamComponent)
-		runComponent(cn.downstreamComponent)
+		cn.upstreamComponent.RunComponent()
+		cn.downstreamComponent.RunComponent()
 	}
 }
