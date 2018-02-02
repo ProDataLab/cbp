@@ -6,7 +6,7 @@ import (
 
 
 type connection struct {
-	id Id
+	id _id
 	upstreamComponent *component 
 	downstreamComponent *component 
 }

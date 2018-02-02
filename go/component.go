@@ -13,7 +13,7 @@ import (
 )
 
 type component struct {
-	id            Id
+	id            _id
 	inSockets     []*socket
 	outSockets    []*socket
 	configSockets []*socket
@@ -30,13 +30,14 @@ func newComponent(name string) (*component, error) {
 	return c, nil
 }
 
-func addSocket(name string, comp *component, socketType string, transportType string, url string) {
+func addSocket(name string, comp *component, st socketType, tt transportType, url string) error {
 	// TODO: check both socketType and transportType
-	if s, err := socket.newSocket(name, socketType, transportType, url); err != nil {
+	s, err := newSocket(name, st, tt, url)
+	if err != nil {
 		return err
 	}
 	c := comp
-	switch socketType {
+	switch st {
 	case "req":
 		c.outSockets = append(c.outSockets, s)
 	case "rep":
@@ -50,9 +51,9 @@ func addSocket(name string, comp *component, socketType string, transportType st
 	case "pull":
 		c.inSockets = append(c.inSockets, s)
 	}
-	return s, nil
+	return nil
 }
 
 func runComponent(comp *component) error {
-
+	return nil
 }

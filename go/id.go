@@ -1,6 +1,6 @@
 package cbp
 
-type Id struct {
+type _id struct {
 	name string
 	uid  string
 }

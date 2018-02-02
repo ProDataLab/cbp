@@ -1,0 +1,7 @@
+// THIS IS EXAMPLE CODE
+
+package main
+
+func main() {
+	runComponent
+}

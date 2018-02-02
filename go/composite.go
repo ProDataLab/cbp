@@ -6,9 +6,9 @@ import (
 
 
 type composite struct {
-	id Id 
+	id _id 
 	components []*component 
-	connections []*Connection 
+	connections []*connection 
 	head *component 
 	tail *component 
 }
@@ -25,33 +25,38 @@ func addComponent(c *composite, comp *component) {
 	c.components = append(c.components, comp)
 }
 
-func addConnection(c *composite, upstreamComponentUid string, downstreamComponentUid string) {
+func addConnection(c *composite, upstreamComponentUID string, downstreamComponentUID string) error {
 	var (
 		u *component
 		d *component 
 	)
 	for _, v := range c.components {
-		if upstreamComponentUid == v.id.uid {
+		if upstreamComponentUID == v.id.uid {
 			u = v 
-		} else if downstreamComponentUid == v.id.uid {
+		} else if downstreamComponentUID == v.id.uid {
 			d = v 
 		}
 	}
-	cn := NewConnection(u.id.name+"/"+d.id.name, u, d)
+	cn, err := newConnection(u.id.name+"/"+d.id.name, u, d)
+	if err != nil {
+		return err 
+	}
 	cn.id.uid = xid.New().String()
 	c.connections = append(c.connections, cn)
+	return nil 
 }
 
 // AddInterConnection is for connections to outside of this c
 // ..(c to component or c to c)
 // func AddInterConnection() {}
 
-func RunComposite(c *composite) error {
+// RunComposite blah
+func RunComposite(c *composite) {
 	// todo: validate c
-	c.head = c.connections[0]
-	c.tail = c.connections[len(c.connections)-1]
-	for i, cn := range c.connections {
-		RunComponent(cn.upstreamComponent)
-		RunComponent(cn.downstreamComponent)
+	c.head = c.connections[0].upstreamComponent
+	c.tail = c.connections[len(c.connections)-1].downstreamComponent
+	for _, cn := range c.connections {
+		runComponent(cn.upstreamComponent)
+		runComponent(cn.downstreamComponent)
 	}
 }
