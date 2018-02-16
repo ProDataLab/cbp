@@ -9,6 +9,7 @@
 package cbp
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/rs/xid"
@@ -25,6 +26,11 @@ type Component struct {
 	outChannel    chan []byte
 }
 
+var (
+	// ErrComponentHasNoSockets is returned when the component is run with no sockets attached.
+	ErrComponentHasNoSockets = errors.New("this component has no sockets")
+)
+
 // NewComponent allocates and returns a new Component to the user.
 func NewComponent(name string) (*Component, error) {
 	c := new(Component)
@@ -33,9 +39,15 @@ func NewComponent(name string) (*Component, error) {
 	return c, nil
 }
 
+// Name returns the name of this component
+func (c *Component) Name() string {
+	return c.id.name
+}
+
 // AddSocket adds a socket to the component
 func (c *Component) AddSocket(name string, st SocketType, tt TransportType, url string) error {
 	// TODO: check both SocketType and transportType
+	fmt.Printf("INFO: In c.AddSocket.. socketType: %s\n", string(st))
 	s, err := newSocket(name, st, tt, url)
 	if err != nil {
 		return err
@@ -57,13 +69,33 @@ func (c *Component) AddSocket(name string, st SocketType, tt TransportType, url 
 	return nil
 }
 
+// AddConfigSocket is used to configure the component. A component is initially started with
+// only this socket. Further configuration is done dynamically.
+func (c *Component) AddConfigSocket(url string) error {
+	return c.AddSocket("config", "pull", "tcp", url)
+}
+
+// AddReportSocket is used to report all errors, etc from the component. It is a pub socket
+// so any sink should subscribe to it.
+func (c *Component) AddReportSocket(componentName string, url string) error {
+	return c.AddSocket(componentName+"-report", "pub", "tcp", url)
+}
+
 // RunComponent blah
 func (c *Component) RunComponent() error {
 	var all [][]*socket
-	all = append(all, c.inSockets)
-	all = append(all, c.outSockets)
 	all = append(all, c.configSockets)
 	all = append(all, c.reportSockets)
+	if c.inSockets != nil {
+		all = append(all, c.inSockets)
+	}
+	if c.outSockets != nil {
+		all = append(all, c.outSockets)
+	}
+
+	if len(all) == 0 {
+		return ErrComponentHasNoSockets
+	}
 	for _, r := range all {
 		for _, s := range r {
 			s.run()

@@ -6,17 +6,17 @@ import (
 
 // Composite blah
 type Composite struct {
-	id _id 
-	components []*Component 
-	connections []*connection 
-	head *Component 
-	tail *Component 
+	id          _id
+	components  []*Component
+	connections []*connection
+	head        *Component
+	tail        *Component
 }
 
 // NewComposite retuerns a new, empty Composite object
 func NewComposite(name string) *Composite {
 	c := new(Composite)
-	c.id.name = name 
+	c.id.name = name
 	c.id.uid = xid.New().String()
 	return c
 }
@@ -30,22 +30,22 @@ func (c *Composite) AddComponent(comp *Component) {
 func (c *Composite) AddConnection(upstreamComponentUID string, downstreamComponentUID string) error {
 	var (
 		u *Component
-		d *Component 
+		d *Component
 	)
 	for _, v := range c.components {
 		if upstreamComponentUID == v.id.uid {
-			u = v 
+			u = v
 		} else if downstreamComponentUID == v.id.uid {
-			d = v 
+			d = v
 		}
 	}
 	cn, err := newConnection(u.id.name+"/"+d.id.name, u, d)
 	if err != nil {
-		return err 
+		return err
 	}
 	cn.id.uid = xid.New().String()
 	c.connections = append(c.connections, cn)
-	return nil 
+	return nil
 }
 
 // AddInterConnection is for connections to outside of this c

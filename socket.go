@@ -66,6 +66,7 @@ var (
 
 // newSocket creates a new component socket and returns it.
 func newSocket(name string, st SocketType, tt TransportType, url string) (*socket, error) {
+	fmt.Printf("INFO: In newSocket(): name=%s, st=%s, tt=%s, url=%s\n", name, string(st), string(tt), url)
 	if !isSocketType(st) {
 		return nil, ErrWrongSocketType
 	}
@@ -118,7 +119,7 @@ func (s *socket) setSubscriptionFilters(topics []byte) error {
 }
 
 func (s *socket) run() {
-	fmt.Println("in socket.run")
+	fmt.Printf("in socket.run: st = %s", string(s.sockType))
 	switch s.sockType {
 	case "req":
 		s.sendChannel = make(chan []byte)
@@ -196,7 +197,7 @@ func (s *socket) runReq() error {
 	)
 	defer close(s.sendChannel)
 	defer close(s.recvChannel)
-	if err = s.mangosSocket.Dial(s.url); err != nil {
+	if err = s.mangosSocket.Dial(string(s.transType) + "://" + s.url); err != nil {
 		return err
 	}
 	for {
@@ -218,7 +219,7 @@ func (s *socket) runRep() error {
 	)
 	defer close(s.recvChannel)
 	defer close(s.sendChannel)
-	if err = s.mangosSocket.Listen(s.url); err != nil {
+	if err = s.mangosSocket.Listen(string(s.transType) + "://" + s.url); err != nil {
 		return err
 	}
 	for {
@@ -236,7 +237,7 @@ func (s *socket) runRep() error {
 func (s *socket) runPub() error {
 	var err error
 	defer close(s.sendChannel)
-	if err = s.mangosSocket.Listen(s.url); err != nil {
+	if err = s.mangosSocket.Listen(string(s.transType) + "://" + s.url); err != nil {
 		return err
 	}
 	for {
@@ -252,7 +253,7 @@ func (s *socket) runSub() error {
 		msg []byte
 	)
 	defer close(s.recvChannel)
-	if err = s.mangosSocket.Dial(s.url); err != nil {
+	if err = s.mangosSocket.Dial(string(s.transType) + "://" + s.url); err != nil {
 		return err
 	}
 	for {
@@ -267,8 +268,9 @@ func (s *socket) runPush() error {
 	fmt.Println("In runPush")
 	var err error
 	// defer close(s.sendChannel)
-	if err = s.mangosSocket.Dial(s.url); err != nil {
-		fmt.Printf("ERROR: %s", err.Error())
+	if err = s.mangosSocket.Dial(string(s.transType) + "://" + s.url); err != nil {
+		fmt.Printf("INFO: in s.runPush(): url=%s\n", s.url)
+		fmt.Printf("ERROR: in s.runPush(): %s\n", err.Error())
 		return err
 	}
 	fmt.Println("here i am")
@@ -288,7 +290,7 @@ func (s *socket) runPull() error {
 		msg []byte
 	)
 	// defer close(s.recvChannel)
-	if err = s.mangosSocket.Listen(s.url); err != nil {
+	if err = s.mangosSocket.Listen(string(s.transType) + "://" + s.url); err != nil {
 		return err
 	}
 	for {
