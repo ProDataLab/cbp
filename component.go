@@ -82,7 +82,7 @@ func (c *Component) AddReportSocket(componentName string, url string) error {
 }
 
 // RunComponent blah
-func (c *Component) RunComponent() error {
+func (c *Component) Run() error {
 	var all [][]*socket
 	all = append(all, c.configSockets)
 	all = append(all, c.reportSockets)
@@ -125,12 +125,22 @@ func (c *Component) RunComponent() error {
 	return nil
 }
 
-// InChannel blah
-func (c *Component) InChannel() chan []byte {
-	return c.inChannel
+// // InChannel blah
+// func (c *Component) InChannel() chan []byte {
+// 	return c.inChannel
+// }
+
+// // OutChannel blah
+// func (c *Component) OutChannel() chan []byte {
+// 	return c.outChannel
+// }
+
+// Send sends the msgpack encoded byte array to downstream
+func (c *Component) Send(val []byte) {
+	c.outChannel <- val
 }
 
-// OutChannel blah
-func (c *Component) OutChannel() chan []byte {
-	return c.outChannel
+// Recv receives the msgpack encoded byte array from upstream
+func (c *Component) Recv() []byte {
+	return <-c.inChannel
 }

@@ -58,7 +58,7 @@ func RunComposite(c *Composite) {
 	c.head = c.connections[0].upstreamComponent
 	c.tail = c.connections[len(c.connections)-1].downstreamComponent
 	for _, cn := range c.connections {
-		cn.upstreamComponent.RunComponent()
-		cn.downstreamComponent.RunComponent()
+		cn.upstreamComponent.Run()
+		cn.downstreamComponent.Run()
 	}
 }
