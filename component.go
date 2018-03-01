@@ -11,6 +11,7 @@ package cbp
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/rs/xid"
 )
@@ -52,6 +53,18 @@ func (c *Component) AddSocket(name string, st SocketType, tt TransportType, url 
 	if err != nil {
 		return err
 	}
+	if name == "config" {
+		c.configSockets = append(c.configSockets, s)
+		err = s.setSubscriptionFilters(c.Name+"-config")
+		if err != nil {
+			return err 
+		}
+		return nil 
+	}
+	if strings.Contains(name, "-report") {
+		c.reportSockets = append(c.reportSockets, s)
+		return nil 
+	}
 	switch st {
 	case "req":
 		c.outSockets = append(c.outSockets, s)
@@ -72,13 +85,13 @@ func (c *Component) AddSocket(name string, st SocketType, tt TransportType, url 
 // AddConfigSocket is used to configure the component. A component is initially started with
 // only this socket. Further configuration is done dynamically.
 func (c *Component) AddConfigSocket(url string) error {
-	return c.AddSocket("config", "pull", "tcp", url)
+	return c.AddSocket("config", "sub", "tcp", url)
 }
 
 // AddReportSocket is used to report all errors, etc from the component. It is a pub socket
 // so any sink should subscribe to it.
-func (c *Component) AddReportSocket(componentName string, url string) error {
-	return c.AddSocket(componentName+"-report", "pub", "tcp", url)
+func (c *Component) AddReportSocket(reportComponentName string, url string) error {
+	return c.AddSocket(reportComponentName+"-report", "push", "tcp", url)
 }
 
 // RunComponent blah
@@ -92,7 +105,6 @@ func (c *Component) Run() error {
 	if c.outSockets != nil {
 		all = append(all, c.outSockets)
 	}
-
 	if len(all) == 0 {
 		return ErrComponentHasNoSockets
 	}
@@ -109,6 +121,7 @@ func (c *Component) Run() error {
 		}
 	}
 	fanOut := func(sc chan []byte) {
+		switch st {
 		for msg := range c.outChannel {
 			fmt.Println(string(msg))
 			sc <- msg
