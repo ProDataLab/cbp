@@ -37,64 +37,12 @@ func NewComponent(name string) (*Component, error) {
 	c := new(Component)
 	c.id.name = name
 	c.id.uid = xid.New().String()
+	c.addConfigSocket("tcp://127.0.0.1:55555")          // TODO: fixme
+	c.addReportSocket("stdout", "tcp://127.0.0.1:5556") // TODO: fixme
 	return c, nil
 }
 
-// Name returns the name of this component
-func (c *Component) Name() string {
-	return c.id.name
-}
-
-// AddSocket adds a socket to the component
-func (c *Component) AddSocket(name string, st SocketType, tt TransportType, url string) error {
-	// TODO: check both SocketType and transportType
-	fmt.Printf("INFO: In c.AddSocket.. socketType: %s\n", string(st))
-	s, err := newSocket(name, st, tt, url)
-	if err != nil {
-		return err
-	}
-	if name == "config" {
-		c.configSockets = append(c.configSockets, s)
-		err = s.setSubscriptionFilters(c.Name+"-config")
-		if err != nil {
-			return err 
-		}
-		return nil 
-	}
-	if strings.Contains(name, "-report") {
-		c.reportSockets = append(c.reportSockets, s)
-		return nil 
-	}
-	switch st {
-	case "req":
-		c.outSockets = append(c.outSockets, s)
-	case "rep":
-		c.inSockets = append(c.inSockets, s)
-	case "pub":
-		c.outSockets = append(c.outSockets, s)
-	case "sub":
-		c.inSockets = append(c.inSockets, s)
-	case "push":
-		c.outSockets = append(c.outSockets, s)
-	case "pull":
-		c.inSockets = append(c.inSockets, s)
-	}
-	return nil
-}
-
-// AddConfigSocket is used to configure the component. A component is initially started with
-// only this socket. Further configuration is done dynamically.
-func (c *Component) AddConfigSocket(url string) error {
-	return c.AddSocket("config", "sub", "tcp", url)
-}
-
-// AddReportSocket is used to report all errors, etc from the component. It is a pub socket
-// so any sink should subscribe to it.
-func (c *Component) AddReportSocket(reportComponentName string, url string) error {
-	return c.AddSocket(reportComponentName+"-report", "push", "tcp", url)
-}
-
-// RunComponent blah
+// Run blah
 func (c *Component) Run() error {
 	var all [][]*socket
 	all = append(all, c.configSockets)
@@ -121,7 +69,6 @@ func (c *Component) Run() error {
 		}
 	}
 	fanOut := func(sc chan []byte) {
-		switch st {
 		for msg := range c.outChannel {
 			fmt.Println(string(msg))
 			sc <- msg
@@ -138,16 +85,6 @@ func (c *Component) Run() error {
 	return nil
 }
 
-// // InChannel blah
-// func (c *Component) InChannel() chan []byte {
-// 	return c.inChannel
-// }
-
-// // OutChannel blah
-// func (c *Component) OutChannel() chan []byte {
-// 	return c.outChannel
-// }
-
 // Send sends the msgpack encoded byte array to downstream
 func (c *Component) Send(val []byte) {
 	c.outChannel <- val
@@ -156,4 +93,58 @@ func (c *Component) Send(val []byte) {
 // Recv receives the msgpack encoded byte array from upstream
 func (c *Component) Recv() []byte {
 	return <-c.inChannel
+}
+
+// Name returns the name of this component
+func (c *Component) Name() string {
+	return c.id.name
+}
+
+// AddSocket adds a socket to the component
+func (c *Component) addSocket(name string, st SocketType, tt TransportType, url string) error {
+	// TODO: check both SocketType and transportType
+	fmt.Printf("INFO: In c.AddSocket.. socketType: %s\n", string(st))
+	s, err := newSocket(name, st, tt, url)
+	if err != nil {
+		return err
+	}
+	if name == "config" {
+		c.configSockets = append(c.configSockets, s)
+		err = s.setSubscriptionFilters(c.id.name + "-config")
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	if strings.Contains(name, "-report") {
+		c.reportSockets = append(c.reportSockets, s)
+		return nil
+	}
+	switch st {
+	case "req":
+		c.outSockets = append(c.outSockets, s)
+	case "rep":
+		c.inSockets = append(c.inSockets, s)
+	case "pub":
+		c.outSockets = append(c.outSockets, s)
+	case "sub":
+		c.inSockets = append(c.inSockets, s)
+	case "push":
+		c.outSockets = append(c.outSockets, s)
+	case "pull":
+		c.inSockets = append(c.inSockets, s)
+	}
+	return nil
+}
+
+// AddConfigSocket is used to configure the component. A component is initially started with
+// only this socket. Further configuration is done dynamically.
+func (c *Component) addConfigSocket(url string) error {
+	return c.addSocket("config", "sub", "tcp", url)
+}
+
+// AddReportSocket is used to report all errors, etc from the component. It is a pub socket
+// so any sink should subscribe to it.
+func (c *Component) addReportSocket(reportComponentName string, url string) error {
+	return c.addSocket(reportComponentName+"-report", "push", "tcp", url)
 }

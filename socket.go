@@ -111,11 +111,11 @@ func newSocket(name string, st SocketType, tt TransportType, url string) (*socke
 }
 
 // setSubscriptionFilters is used to set topic filters in a pub/sub protocol
-func (s *socket) setSubscriptionFilters(topics []byte) error {
+func (s *socket) setSubscriptionFilters(topics string) error {
 	if s.mangosSocket.GetProtocol().Name() != "sub" {
 		return ErrWrongSocketType
 	}
-	return s.mangosSocket.SetOption(mangos.OptionSubscribe, topics)
+	return s.mangosSocket.SetOption(mangos.OptionSubscribe, []byte(topics))
 }
 
 func (s *socket) run() {
