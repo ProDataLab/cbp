@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "/home/prodatalab/go/src/github.com/gorilla"
+		},
+		{
+			"path": "/home/prodatalab/go/src/github.com/prodatalab/components"
+		},
+		{
+			"path": "/home/prodatalab/go/src/github.com/prodatalab/msg"
+		}
+	],
+	"settings": {}
+}
