@@ -10,8 +10,6 @@ package cbp
 
 import (
 	"errors"
-	"fmt"
-	"strings"
 
 	"github.com/rs/xid"
 )
@@ -37,8 +35,6 @@ func NewComponent(name string) (*Component, error) {
 	c := new(Component)
 	c.id.name = name
 	c.id.uid = xid.New().String()
-	c.addConfigSocket("tcp://127.0.0.1:55555")          // TODO: fixme
-	c.addReportSocket("stdout", "tcp://127.0.0.1:5556") // TODO: fixme
 	return c, nil
 }
 
@@ -70,16 +66,16 @@ func (c *Component) Run() error {
 	}
 	fanOut := func(sc chan []byte) {
 		for msg := range c.outChannel {
-			fmt.Println(string(msg))
+			// fmt.Println(string(msg))
 			sc <- msg
 		}
 	}
 	for _, s := range c.inSockets {
-		fmt.Println(s.id.name)
+		// fmt.Println(s.id.name)
 		go fanIn(s.recvChannel)
 	}
 	for _, s := range c.outSockets {
-		fmt.Println(s.id.name)
+		// fmt.Println(s.id.name)
 		go fanOut(s.sendChannel)
 	}
 	return nil
@@ -101,26 +97,25 @@ func (c *Component) Name() string {
 }
 
 // AddSocket adds a socket to the component
-func (c *Component) addSocket(name string, st SocketType, tt TransportType, url string) error {
+func (c *Component) AddSocket(urlString string) error {
 	// TODO: check both SocketType and transportType
-	fmt.Printf("INFO: In c.AddSocket.. socketType: %s\n", string(st))
-	s, err := newSocket(name, st, tt, url)
+	s, err := newSocket(c.id.name, urlString)
 	if err != nil {
 		return err
 	}
-	if name == "config" {
-		c.configSockets = append(c.configSockets, s)
-		err = s.setSubscriptionFilters(c.id.name + "-config")
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-	if strings.Contains(name, "-report") {
-		c.reportSockets = append(c.reportSockets, s)
-		return nil
-	}
-	switch st {
+	// if  == "config" {
+	// 	c.configSockets = append(c.configSockets, s)
+	// 	err = s.setSubscriptionFilters(c.id.name + "-config")
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	return nil
+	// }
+	// if strings.Contains(name, "-report") {
+	// 	c.reportSockets = append(c.reportSockets, s)
+	// 	return nil
+	// }
+	switch s.sockType {
 	case "req":
 		c.outSockets = append(c.outSockets, s)
 	case "rep":
@@ -137,14 +132,14 @@ func (c *Component) addSocket(name string, st SocketType, tt TransportType, url 
 	return nil
 }
 
-// AddConfigSocket is used to configure the component. A component is initially started with
-// only this socket. Further configuration is done dynamically.
-func (c *Component) addConfigSocket(url string) error {
-	return c.addSocket("config", "sub", "tcp", url)
-}
+// // AddConfigSocket is used to configure the component. A component is initially started with
+// // only this socket. Further configuration is done dynamically.
+// func (c *Component) addConfigSocket(url string) error {
+// 	return c.AddSocket("config", url)
+// }
 
-// AddReportSocket is used to report all errors, etc from the component. It is a pub socket
-// so any sink should subscribe to it.
-func (c *Component) addReportSocket(reportComponentName string, url string) error {
-	return c.addSocket(reportComponentName+"-report", "push", "tcp", url)
-}
+// // AddReportSocket is used to report all errors, etc from the component. It is a pub socket
+// // so any sink should subscribe to it.
+// func (c *Component) addReportSocket(reportComponentName string, url string) error {
+// 	return c.AddSocket(reportComponentName+"-report", url)
+// }
