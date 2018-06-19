@@ -87,6 +87,14 @@ func newSocket(name string, urlString string) (*socket, error) {
 	s.port = u.Port()
 	s.sockType = SocketType(st)
 	s.transType = TransportType(tt)
+
+	// log.WithFields(logrus.Fields{
+	// 	"host": s.host,
+	// 	"port": s.port,
+	// 	"st":   s.sockType,
+	// 	"tt":   s.transType,
+	// }).Debug("In Socket::newSocket()")
+
 	var (
 		msock mangos.Socket
 	)
@@ -117,7 +125,6 @@ func newSocket(name string, urlString string) (*socket, error) {
 	return s, err
 }
 
-// setSubscriptionFilters is used to set topic filters in a pub/sub protocol
 func (s *socket) setSubscriptionFilters(topics string) error {
 	if s.mangosSocket.GetProtocol().Name() != "sub" {
 		return ErrWrongSocketType
@@ -126,7 +133,6 @@ func (s *socket) setSubscriptionFilters(topics string) error {
 }
 
 func (s *socket) run() {
-	// fmt.Printf("in socket.run: st = %s", string(s.sockType))
 	switch s.sockType {
 	case "req":
 		s.sendChannel = make(chan []byte)
@@ -272,15 +278,13 @@ func (s *socket) runSub() error {
 }
 
 func (s *socket) runPush() error {
-	// fmt.Println("In runPush")
 	var err error
-	// defer close(s.sendChannel)
+	defer close(s.sendChannel)
 	if err = s.mangosSocket.Dial(string(s.transType) + "://" + s.host + ":" + s.port); err != nil {
-		fmt.Printf("INFO: in s.runPush(): url=%s\n", s.host+":"+s.port)
 		fmt.Printf("ERROR: in s.runPush(): %s\n", err.Error())
+		log.Error(err)
 		return err
 	}
-	// fmt.Println("here i am")
 	for {
 		tmp := <-s.sendChannel
 		if err = s.mangosSocket.Send(tmp); err != nil {
@@ -290,12 +294,11 @@ func (s *socket) runPush() error {
 }
 
 func (s *socket) runPull() error {
-	// fmt.Println("In runPull")
 	var (
 		err error
 		msg []byte
 	)
-	// defer close(s.recvChannel)
+	defer close(s.recvChannel)
 	if err = s.mangosSocket.Listen(string(s.transType) + "://" + s.host + ":" + s.port); err != nil {
 		return err
 	}

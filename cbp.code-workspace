@@ -11,6 +11,18 @@
 		},
 		{
 			"path": "/home/prodatalab/go/src/github.com/prodatalab/msg"
+		},
+		{
+			"path": "/home/prodatalab/go/src/github.com/preichenberger/go-gdax"
+		},
+		{
+			"path": "/home/prodatalab/go/src/github.com/thrasher-/gocryptotrader"
+		},
+		{
+			"path": "/home/prodatalab/go/src/github.com/prodatalab/gojson"
+		},
+		{
+			"path": "/home/prodatalab/go/src/github.com/prodatalab/components/http"
 		}
 	],
 	"settings": {}

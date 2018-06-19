@@ -12,6 +12,7 @@ import (
 	"errors"
 
 	"github.com/rs/xid"
+	"github.com/sirupsen/logrus"
 )
 
 // Component provides the structure of a Component
@@ -28,7 +29,10 @@ type Component struct {
 var (
 	// ErrComponentHasNoSockets is returned when the component is run with no sockets attached.
 	ErrComponentHasNoSockets = errors.New("this component has no sockets")
+	log                      = logrus.New()
 )
+
+// log.Level = logrus.DebugLevel
 
 // NewComponent allocates and returns a new Component to the user.
 func NewComponent(name string) (*Component, error) {
@@ -40,6 +44,7 @@ func NewComponent(name string) (*Component, error) {
 
 // Run blah
 func (c *Component) Run() error {
+
 	var all [][]*socket
 	all = append(all, c.configSockets)
 	all = append(all, c.reportSockets)
@@ -65,8 +70,9 @@ func (c *Component) Run() error {
 		}
 	}
 	fanOut := func(sc chan []byte) {
+
 		for msg := range c.outChannel {
-			// fmt.Println(string(msg))
+
 			sc <- msg
 		}
 	}
@@ -75,7 +81,7 @@ func (c *Component) Run() error {
 		go fanIn(s.recvChannel)
 	}
 	for _, s := range c.outSockets {
-		// fmt.Println(s.id.name)
+
 		go fanOut(s.sendChannel)
 	}
 	return nil
@@ -83,12 +89,17 @@ func (c *Component) Run() error {
 
 // Send sends the msgpack encoded byte array to downstream
 func (c *Component) Send(val []byte) {
+
 	c.outChannel <- val
+
 }
 
 // Recv receives the msgpack encoded byte array from upstream
 func (c *Component) Recv() []byte {
-	return <-c.inChannel
+
+	tmp := <-c.inChannel
+
+	return tmp
 }
 
 // Name returns the name of this component
@@ -98,6 +109,7 @@ func (c *Component) Name() string {
 
 // AddSocket adds a socket to the component
 func (c *Component) AddSocket(urlString string) error {
+
 	// TODO: check both SocketType and transportType
 	s, err := newSocket(c.id.name, urlString)
 	if err != nil {
